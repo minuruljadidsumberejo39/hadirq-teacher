@@ -12,7 +12,7 @@
     <script>
         // --- KONFIGURASI GITHUB PAGES / EXTERNAL HOST ---
         // Ganti URL ini dengan URL Web App Apps Script PETUGAS/TEACHER Anda
-        var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxIzhA0Uj2AtvKoRhWuH02ALRlVGMnI7ZPHL_VF3nfYI2PhVJ9RMG2S2pMXeEsKCutF/exec";
+        var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxw_S7iNuJzLVjiV1VOcdrLvbJtbnZVTwINb0n6lCcsoGT2RD399wMxCZ_P3VzXBSIa/exec";
 
         if (typeof google === 'undefined' || !google.script || !google.script.run) {
             console.log("Menjalankan mode External Host (Github Pages)");
@@ -897,6 +897,9 @@
             <!-- Konten Tab Kamera -->
             <div id="scan-camera-content" class="scan-content active">
                 <div style="position: relative;">
+                    <button class="secondary-btn" id="switch-camera-btn" onclick="toggleCamera()" style="position: absolute; top: 12px; right: 12px; z-index: 20; width: auto; font-size: 11px; padding: 6px 12px; background: rgba(99, 102, 241, 0.9); backdrop-filter: blur(5px); border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                        ⇄ Ganti Kamera
+                    </button>
                     <div id="reader"></div>
                     <div class="scanner-overlay">
                         <div class="scan-line"></div>
@@ -958,6 +961,7 @@
         const SCAN_COOLDOWN_MS = 2500;
         let scanTab = 'camera';
         let cameraBlocked = false;
+        let currentCamera = 'environment'; // Menyimpan state kamera depan/belakang
 
         let alatStudentList = [];
         let alatSearchResults = [];
@@ -1261,7 +1265,7 @@
             }
 
             const videoConstraintsObj = {
-                facingMode: 'environment',
+                facingMode: currentCamera,
                 width: { ideal: 1280, min: 640 },
                 height: { ideal: 720, min: 480 }
             };
@@ -1274,7 +1278,7 @@
             };
 
             scanner.start(
-                { facingMode: "environment" },
+                { facingMode: currentCamera },
                 { fps: 15, qrbox: qrboxFunction, videoConstraints: videoConstraintsObj },
                 (decodedText) => {
                     handleScanSuccess(decodedText);
@@ -1285,6 +1289,30 @@
                 const errText = (err && err.message) ? err.message : String(err || '');
                 showToast('Kamera gagal: ' + errText, 'error');
             });
+        }
+
+        function toggleCamera() {
+            if (cameraBlocked || isCameraBlockedByPolicy()) return;
+            const btn = document.getElementById('switch-camera-btn');
+            if (btn) btn.disabled = true;
+            
+            let nextCamera = currentCamera === 'environment' ? 'user' : 'environment';
+            
+            if (scanner && scanner.isScanning) {
+                scanner.stop().then(() => {
+                    scanner = null;
+                    currentCamera = nextCamera;
+                    startScanner();
+                    if (btn) btn.disabled = false;
+                }).catch((err) => {
+                    showToast('Gagal mematikan kamera: ' + err.message, 'error');
+                    if (btn) btn.disabled = false;
+                });
+            } else {
+                currentCamera = nextCamera;
+                startScanner();
+                if (btn) btn.disabled = false;
+            }
         }
 
         function stopScanner() {
