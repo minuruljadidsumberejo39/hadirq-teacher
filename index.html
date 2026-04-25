@@ -1,0 +1,1781 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Petugas HadirQ</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script>
+        // --- KONFIGURASI GITHUB PAGES / EXTERNAL HOST ---
+        // Ganti URL ini dengan URL Web App Apps Script PETUGAS/TEACHER Anda
+        var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwWpECY_zZBgYEG6jANUQDgwqVE-6aMBLYLbQv6i5N5y7bC5SajqSjHPzt8UJUqbZ8a/exec";
+
+        if (typeof google === 'undefined' || !google.script || !google.script.run) {
+            console.log("Menjalankan mode External Host (Github Pages)");
+            window.google = {
+                script: {
+                    get run() {
+                        var callData = { _success: null, _failure: null };
+                        return new Proxy(callData, {
+                            get: function (target, prop, receiver) {
+                                if (prop === 'withSuccessHandler') return function (cb) { target._success = cb; return receiver; };
+                                if (prop === 'withFailureHandler') return function (cb) { target._failure = cb; return receiver; };
+                                return function (...args) {
+                                    fetch(GAS_WEB_APP_URL, {
+                                        method: 'POST', redirect: 'follow',
+                                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                                        body: JSON.stringify({ action: prop, params: args })
+                                    })
+                                        .then(res => res.json())
+                                        .then(data => {
+                                            if (data.error) { if (target._failure) target._failure(new Error(data.error)); else console.error("GAS Error:", data.error); }
+                                            else { if (target._success) target._success(data.result); }
+                                        })
+                                        .catch(err => { if (target._failure) target._failure(err); else console.error("Network Error:", err); });
+                                };
+                            }
+                        });
+                    }
+                }
+            };
+            if (typeof google === 'undefined') {
+                var google = window.google;
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #14b8a6;
+            --bg: #0f172a;
+            --card: rgba(30, 41, 59, 0.7);
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        html,
+        body {
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Background Animated Blobs */
+        .blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(60px);
+            z-index: -1;
+            opacity: 0.4;
+        }
+
+        .blob-1 {
+            width: 151px;
+            height: 151px;
+            background: var(--primary);
+            top: -50px;
+            right: -20px;
+            opacity: 0.3;
+        }
+
+        .blob-2 {
+            width: 151px;
+            height: 151px;
+            background: var(--secondary);
+            bottom: -50px;
+            left: -20px;
+            opacity: 0.3;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            padding: 0 12px;
+            box-sizing: border-box;
+        }
+
+        /* Pages */
+        .page {
+            display: none;
+            padding: 12px;
+            animation: fadeIn 0.4s ease;
+            flex: 1;
+        }
+
+        .page.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Login Page */
+        #login-page {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .login-card {
+            background: var(--card);
+            backdrop-filter: blur(20px);
+            padding: 40px 30px;
+            border-radius: 32px;
+            border: 1px solid var(--glass-border);
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo-circle {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 24px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 32px;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .pin-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .pin-dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+            transition: 0.2s;
+        }
+
+        .pin-dot.active {
+            background: var(--primary);
+            transform: scale(1.2);
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            width: 100%;
+            max-width: 250px;
+            margin: 0 auto;
+        }
+
+        .num-btn {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 15px;
+            border-radius: 16px;
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .num-btn:active {
+            background: var(--primary);
+            transform: scale(0.95);
+        }
+
+        /* Header */
+        .header {
+            padding: 10px 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            gap: 5px;
+        }
+
+        .user-tag {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--glass);
+            padding: 4px 8px;
+            border-radius: 50px;
+            border: 1px solid var(--glass-border);
+            font-size: 11px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 110px;
+            flex-shrink: 1;
+        }
+
+        .dot-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+        }
+
+        /* Stats Card Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            backdrop-filter: blur(10px);
+            padding: 12px 4px;
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .stat-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .stat-val {
+            font-size: 16px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 8px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: var(--text-dim);
+            letter-spacing: 0.5px;
+        }
+
+        /* Stat Specific Colors */
+        .s-hadir {
+            color: var(--success);
+        }
+
+        .i-hadir {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .s-sakit {
+            color: var(--warning);
+        }
+
+        .i-sakit {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .s-ijin {
+            color: var(--primary);
+        }
+
+        .i-ijin {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+        }
+
+        .s-alpha {
+            color: var(--danger);
+        }
+
+        .i-alpha {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        /* Action Buttons */
+        .fab {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            padding: 12px 24px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+            border: none;
+            cursor: pointer;
+            z-index: 100;
+            font-size: 14px;
+        }
+
+        .secondary-btn {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 10px;
+            border-radius: 12px;
+            width: 100%;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        /* List Section */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+        }
+
+        .log-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .log-item {
+            background: var(--glass);
+            padding: 10px 12px;
+            border-radius: 14px;
+            border: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .log-info h4 {
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .log-info p {
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .log-time {
+            font-size: 11px;
+            font-weight: 600;
+            flex-shrink: 0;
+            margin-left: 10px;
+        }
+
+        /* QR Scanner */
+        .scan-tab-container {
+            display: flex;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 4px;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .scan-tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            padding: 10px 8px;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+        .scan-tab-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        .scan-tab-btn.active {
+            color: white;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.25);
+        }
+
+        .scan-tab-btn[aria-disabled="true"] {
+            opacity: 0.55;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .scan-content {
+            display: none;
+        }
+
+        .scan-content.active {
+            display: block;
+        }
+
+        #reader {
+            width: 100%;
+            border-radius: 24px;
+            overflow: hidden;
+            background: black;
+            margin-top: 20px;
+        }
+
+        .scan-hint {
+            margin-top: 20px;
+            text-align: center;
+            color: var(--text-dim);
+        }
+
+        .scanner-overlay {
+            border: 2px solid var(--primary);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border-radius: 20px;
+            box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: var(--primary);
+            top: 0;
+            animation: scanAnim 2s linear infinite;
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        @keyframes scanAnim {
+            0% {
+                top: 0;
+            }
+
+            100% {
+                top: 100%;
+            }
+        }
+
+        /* Alat Scan Qr (keyboard-wedge scanner) */
+        .alat-scan-wrapper {
+            margin-top: 16px;
+            background: var(--glass);
+            border: 2px dashed rgba(99, 102, 241, 0.35);
+            border-radius: 24px;
+            padding: 22px 18px;
+            text-align: center;
+            cursor: text;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .alat-scan-wrapper.active-scan {
+            border-color: rgba(20, 184, 166, 0.55);
+            box-shadow: 0 0 0 1px rgba(20, 184, 166, 0.15) inset;
+        }
+
+        .alat-scan-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(99, 102, 241, 0.12);
+            border: 1px solid rgba(99, 102, 241, 0.22);
+            border-radius: 22px;
+        }
+
+        .alat-scan-icon svg {
+            width: 34px;
+            height: 34px;
+            fill: var(--primary);
+        }
+
+        .alat-scan-text {
+            font-size: 16px;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+
+        .alat-scan-subtext {
+            font-size: 12px;
+            color: var(--text-dim);
+            line-height: 1.35;
+        }
+
+        .alat-scan-input-container {
+            margin-top: 14px;
+        }
+
+        #alat-scan-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: white;
+            padding: 12px 14px;
+            border-radius: 14px;
+            outline: none;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        #alat-scan-input:focus {
+            border-color: rgba(99, 102, 241, 0.7);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+        }
+
+        .alat-search-results {
+            margin-top: 10px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
+            overflow: hidden;
+            display: none;
+            text-align: left;
+            max-height: 240px;
+            overflow-y: auto;
+        }
+
+        .alat-search-results.active {
+            display: block;
+        }
+
+        .alat-search-item {
+            width: 100%;
+            border: none;
+            background: transparent;
+            color: white;
+            padding: 10px 12px;
+            cursor: pointer;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .alat-search-item:last-child {
+            border-bottom: none;
+        }
+
+        .alat-search-item:hover,
+        .alat-search-item.active {
+            background: rgba(99, 102, 241, 0.18);
+        }
+
+        .alat-search-name {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .alat-search-meta {
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .alat-search-empty {
+            padding: 10px 12px;
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        /* Manual Filter */
+        .manual-filter {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .manual-filter select,
+        .manual-filter input {
+            width: 100%;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            padding: 12px 14px;
+            border-radius: 12px;
+            color: white;
+            outline: none;
+            font-family: inherit;
+            font-size: 13px;
+        }
+
+        .manual-filter select option {
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .manual-filter select:disabled,
+        .manual-filter input:disabled {
+            opacity: 0.6;
+        }
+
+        @media (max-width: 420px) {
+            .manual-filter {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Manual List */
+        .student-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .student-item {
+            background: var(--glass);
+            padding: 15px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .mark-btn {
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            color: white;
+            opacity: 0.8;
+        }
+
+        .mark-btn:active {
+            opacity: 1;
+            transform: scale(0.95);
+        }
+
+        /* Status colors */
+        .b-h {
+            background: var(--success);
+        }
+
+        .b-s {
+            background: var(--warning);
+        }
+
+        .b-i {
+            background: var(--primary);
+        }
+
+        .b-a {
+            background: var(--danger);
+        }
+
+        /* Notifications */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: var(--primary);
+            padding: 12px 25px;
+            border-radius: 12px;
+            font-weight: 600;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            transition: 0.5s;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="toast" id="toast">Notifikasi</div>
+
+    <div class="container">
+        <!-- Login Page -->
+        <div id="login-page" class="page active">
+            <div class="login-card">
+                <div class="logo-circle">HQ</div>
+                <h2>Petugas HadirQ</h2>
+                <p style="color: var(--text-dim); margin-top: 5px; font-size: 14px;">Masukkan PIN Petugas Anda</p>
+
+                <div class="pin-container" id="pin-dots">
+                    <div class="pin-dot"></div>
+                    <div class="pin-dot"></div>
+                    <div class="pin-dot"></div>
+                    <div class="pin-dot"></div>
+                </div>
+
+                <div class="numpad">
+                    <button class="num-btn" onclick="addPin('1')">1</button>
+                    <button class="num-btn" onclick="addPin('2')">2</button>
+                    <button class="num-btn" onclick="addPin('3')">3</button>
+                    <button class="num-btn" onclick="addPin('4')">4</button>
+                    <button class="num-btn" onclick="addPin('5')">5</button>
+                    <button class="num-btn" onclick="addPin('6')">6</button>
+                    <button class="num-btn" onclick="addPin('7')">7</button>
+                    <button class="num-btn" onclick="addPin('8')">8</button>
+                    <button class="num-btn" onclick="addPin('9')">9</button>
+                    <button class="num-btn" onclick="clearPin()">C</button>
+                    <button class="num-btn" onclick="addPin('0')">0</button>
+                    <button class="num-btn" onclick="backspacePin()">←</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Page -->
+        <div id="dashboard-page" class="page">
+            <div class="header">
+                <div class="user-tag">
+                    <div class="dot-status"></div> Petugas Aktif
+                </div>
+                <button onclick="logout()"
+                    style="background: none; border: none; color: var(--danger); font-weight: 700; font-size: 12px; padding: 5px 0; flex-shrink: 0;">Keluar</button>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <h1 style="font-size: clamp(20px, 6vw, 24px); font-weight: 800; line-height: 1.2;">Ringkasan<br>Presensi
+                    Hari Ini</h1>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon i-hadir">H</div>
+                    <div class="stat-val s-hadir" id="stat-hadir">0</div>
+                    <div class="stat-label">Hadir</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon i-sakit">S</div>
+                    <div class="stat-val s-sakit" id="stat-sakit">0</div>
+                    <div class="stat-label">Sakit</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon i-ijin">I</div>
+                    <div class="stat-val s-ijin" id="stat-ijin">0</div>
+                    <div class="stat-label">Izin</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon i-alpha">A</div>
+                    <div class="stat-val s-alpha" id="stat-alpha">0</div>
+                    <div class="stat-label">Alpha</div>
+                </div>
+            </div>
+
+            <button class="secondary-btn" onclick="showPage('manual-page')">📋 Presensi Manual</button>
+
+            <div class="section-header">
+                <h3 class="section-title">Aktivitas Terbaru</h3>
+                <a href="#"
+                    style="color: var(--primary); font-size: 12px; font-weight: 600; text-decoration: none;">Semua</a>
+            </div>
+
+            <div class="log-list" id="log-list">
+                <!-- Log items dynamic -->
+            </div>
+
+            <div style="margin-top: auto; padding: 40px 0 100px; text-align: center; opacity: 0.3; font-size: 10px;">
+                HadirQ Teacher v1.2 &bull; UI Optimized
+            </div>
+
+            <button class="fab" onclick="showPage('scanner-page')">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                    <path
+                        d="M4 4h6v6H4V4zm2 2v2h2V6H6zm8-2h6v6h-6V4zm2 2v2h2V6h-2zM4 14h6v6H4v-6zm2 2v2h2v-2H6zm10 0v2h2v-2h-2zm0-2h2v2h-2v-2zm-2 2h2v2h-2v-2zm0 2h2v2h-2v-2zM14 14h2v2h-2v-2zm4 4h2v2h-2v-2zm-2 2h2v2h-2v-2zm-4-4h2v2h-2v-2zm2 2h2v2h-2v-2z">
+                    </path>
+                </svg>
+                Pindai QR Siswa
+            </button>
+        </div>
+
+        <!-- Scanner Page -->
+        <div id="scanner-page" class="page">
+            <div class="header">
+                <button onclick="showPage('dashboard-page')" style="background: none; border: none; color: white;">←
+                    Kembali</button>
+                <h3>Scan QR Siswa</h3>
+            </div>
+
+            <!-- Tab Pilihan Scan -->
+            <div class="scan-tab-container">
+                <button class="scan-tab-btn active" data-tab="camera" onclick="switchScanTab('camera')">
+                    <svg width="24" height="24" viewBox="0 0 24 24">
+                        <path
+                            d="M9 3L7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" />
+                    </svg>
+                    Kamera
+                </button>
+                <button class="scan-tab-btn" data-tab="alat" onclick="switchScanTab('alat')">
+                    <svg width="24" height="24" viewBox="0 0 24 24">
+                        <path
+                            d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM13 13h4v2h-4v-2zm6 0h2v2h-2v-2zm-6 4h2v2h-2v-2zm4 0h4v2h-4v-2zm-4 4h8v2h-8v-2z" />
+                    </svg>
+                    Alat Scan Qr
+                </button>
+            </div>
+
+            <!-- Konten Tab Kamera -->
+            <div id="scan-camera-content" class="scan-content active">
+                <div style="position: relative;">
+                    <button class="secondary-btn" id="switch-camera-btn" onclick="toggleCamera()" style="position: absolute; top: 12px; right: 12px; z-index: 20; width: auto; font-size: 11px; padding: 6px 12px; background: rgba(99, 102, 241, 0.9); backdrop-filter: blur(5px); border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                        ⇄ Ganti Kamera
+                    </button>
+                    <div id="reader"></div>
+                    <div class="scanner-overlay">
+                        <div class="scan-line"></div>
+                    </div>
+                </div>
+                <div class="scan-hint">Arahkan kamera ke QR Code milik siswa</div>
+            </div>
+
+            <!-- Konten Tab Alat Scan Qr -->
+            <div id="scan-alat-content" class="scan-content">
+                <div class="alat-scan-wrapper" onclick="focusAlatScanInput()">
+                    <div class="alat-scan-icon">
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM19 13h2v2h-2zM13 13h2v2h-2zM15 15h2v2h-2zM13 17h2v2h-2zM15 19h2v2h-2zM17 17h2v2h-2zM17 13h2v2h-2zM19 15h2v2h-2z" />
+                        </svg>
+                    </div>
+                    <div class="alat-scan-text" id="alat-scan-status">Siap Memindai</div>
+                    <div class="alat-scan-subtext" id="alat-scan-subtext">
+                        Arahkan scanner ke QR/Barcode siswa, data akan diproses otomatis setelah Enter.
+                    </div>
+                    <div class="alat-scan-input-container">
+                        <input type="text" id="alat-scan-input" autocomplete="off" onkeydown="onAlatScan(event)"
+                            placeholder="Scan Barcode / ketik Nama atau NIS...">
+                        <div id="alat-search-results" class="alat-search-results"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Page -->
+        <div id="manual-page" class="page">
+            <div class="header">
+                <button onclick="showPage('dashboard-page')" style="background: none; border: none; color: white;">←
+                    Kembali</button>
+                <h3>Presensi Manual</h3>
+            </div>
+
+            <div class="manual-filter">
+                <select id="manual-kelas" onchange="onManualKelasChange()">
+                    <option value="">Pilih Kelas</option>
+                </select>
+                <input type="text" placeholder="Pilih kelas dulu..." id="search-siswa" disabled>
+            </div>
+
+            <div class="student-list" id="student-list">
+                <!-- Students dynamic -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let pin = "";
+        let token = localStorage.getItem('teacher_token');
+        let scanner = null;
+        let isScanProcessing = false;
+        let lastScannedNis = '';
+        let lastScannedAt = 0;
+        const SCAN_COOLDOWN_MS = 5000; // 5 Seconds cooldown for same NIS
+        let scanTab = 'camera';
+        let cameraBlocked = false;
+        let currentCamera = 'environment'; // Menyimpan state kamera depan/belakang
+
+        let alatStudentList = [];
+        let alatSearchResults = [];
+        let alatSearchActiveIndex = -1;
+        let alatSearchDebounceTimer = null;
+        let alatSearchDataLoaded = false;
+        let alatSearchLoading = false;
+
+        let manualKelasLoaded = false;
+        let manualKelasLoading = false;
+
+        window.onload = () => {
+            if (token) {
+                showPage('dashboard-page');
+                loadDashboard();
+            }
+            initAlatScanSearch();
+            initCameraAvailability();
+        };
+
+        function addPin(num) {
+            if (pin.length < 4) {
+                pin += num;
+                updatePinDots();
+                if (pin.length === 4) {
+                    processLogin();
+                }
+            }
+        }
+
+        function clearPin() { pin = ""; updatePinDots(); }
+        function backspacePin() { pin = pin.slice(0, -1); updatePinDots(); }
+
+        function updatePinDots() {
+            const dots = document.querySelectorAll('.pin-dot');
+            dots.forEach((dot, idx) => {
+                if (idx < pin.length) dot.classList.add('active');
+                else dot.classList.remove('active');
+            });
+        }
+
+        function processLogin() {
+            google.script.run
+                .withSuccessHandler((res) => {
+                    if (res.status === 'success') {
+                        token = res.token;
+                        localStorage.setItem('teacher_token', token);
+                        showToast('Login Berhasil!', 'success');
+                        showPage('dashboard-page');
+                        loadDashboard();
+                    } else {
+                        showToast(res.message, 'error');
+                        clearPin();
+                    }
+                })
+                .withFailureHandler((err) => {
+                    showToast('Error Server: ' + err.message, 'error');
+                    clearPin();
+                })
+                .verifyTeacherLogin(pin);
+        }
+
+        function logout() {
+            localStorage.removeItem('teacher_token');
+            token = null;
+            showPage('login-page');
+            clearPin();
+        }
+
+        function isCameraBlockedByPolicy() {
+            return false; // Dinonaktifkan untuk mencegah false positive pada iframe Apps Script
+        }
+
+        function initCameraAvailability() {
+            if (cameraBlocked) return;
+            if (isCameraBlockedByPolicy()) {
+                disableCameraScan('Kamera diblokir oleh policy halaman. Gunakan tab "Alat Scan Qr".');
+            }
+        }
+
+        function disableCameraScan(reason) {
+            const wasBlocked = cameraBlocked;
+            cameraBlocked = true;
+
+            const cameraBtn = document.querySelector('.scan-tab-btn[data-tab="camera"]');
+            if (cameraBtn) {
+                cameraBtn.setAttribute('aria-disabled', 'true');
+                cameraBtn.title = reason || 'Kamera tidak tersedia';
+            }
+
+            scanTab = 'alat';
+
+            const onScannerPage = document.getElementById('scanner-page') &&
+                document.getElementById('scanner-page').classList.contains('active');
+            if (!wasBlocked && onScannerPage) {
+                showToast(reason || 'Kamera tidak tersedia', 'error');
+            }
+            switchScanTab('alat');
+        }
+
+        function handleCameraStartError(err) {
+            const errText = (err && err.message) ? err.message : String(err || '');
+            const lower = errText.toLowerCase();
+
+            const denied = lower.includes('notallowederror') || lower.includes('permission denied');
+            const policy =
+                lower.includes('permissions policy') ||
+                lower.includes('not allowed in this document') ||
+                isCameraBlockedByPolicy();
+
+            if (policy) {
+                disableCameraScan('Kamera diblokir oleh policy halaman. Gunakan tab "Alat Scan Qr".');
+                return true;
+            }
+
+            if (denied) {
+                disableCameraScan('Izin kamera ditolak. Aktifkan izin kamera di browser lalu refresh, atau gunakan tab "Alat Scan Qr".');
+                return true;
+            }
+
+            return false;
+        }
+
+        function renderManualPlaceholder(message) {
+            const container = document.getElementById('student-list');
+            if (!container) return;
+
+            const msg = message || 'Pilih kelas terlebih dahulu untuk menampilkan siswa.';
+            container.innerHTML = '<p style="text-align:center; color:var(--text-dim); padding:20px;">' + msg + '</p>';
+        }
+
+        function updateManualControls() {
+            const kelasEl = document.getElementById('manual-kelas');
+            const searchEl = document.getElementById('search-siswa');
+            const hasKelas = !!(kelasEl && kelasEl.value);
+
+            if (searchEl) {
+                searchEl.disabled = !hasKelas;
+                searchEl.placeholder = hasKelas ? 'Cari Nama Siswa...' : 'Pilih kelas dulu...';
+                if (!hasKelas) searchEl.value = '';
+            }
+        }
+
+        function ensureManualKelasList(forceReload) {
+            if (!token) return;
+            if ((manualKelasLoaded && !forceReload) || manualKelasLoading) return;
+
+            manualKelasLoading = true;
+            const select = document.getElementById('manual-kelas');
+            if (select) select.disabled = true;
+
+            google.script.run
+                .withSuccessHandler((list) => {
+                    manualKelasLoading = false;
+                    manualKelasLoaded = true;
+
+                    if (!select) return;
+
+                    const current = select.value;
+                    select.innerHTML = '';
+
+                    const first = document.createElement('option');
+                    first.value = '';
+                    first.textContent = 'Pilih Kelas';
+                    select.appendChild(first);
+
+                    (Array.isArray(list) ? list : []).forEach((k) => {
+                        const opt = document.createElement('option');
+                        opt.value = String(k || '');
+                        opt.textContent = String(k || '');
+                        select.appendChild(opt);
+                    });
+
+                    if (current) select.value = current;
+                    select.disabled = false;
+                    updateManualControls();
+                })
+                .withFailureHandler((err) => {
+                    manualKelasLoading = false;
+                    manualKelasLoaded = false;
+                    if (select) select.disabled = false;
+                    showToast('Gagal memuat daftar kelas: ' + err.message, 'error');
+                })
+                .getTeacherKelasList(token);
+        }
+
+        function onManualKelasChange() {
+            const searchEl = document.getElementById('search-siswa');
+            if (searchEl) searchEl.value = '';
+            updateManualControls();
+            loadAbsentList();
+        }
+
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+
+            if (id === 'scanner-page') {
+                switchScanTab(scanTab || 'camera');
+            } else {
+                stopScanner();
+                hideAlatSearchResults();
+            }
+
+            if (id === 'manual-page') {
+                ensureManualKelasList();
+                updateManualControls();
+
+                const kelasEl = document.getElementById('manual-kelas');
+                if (kelasEl && kelasEl.value) {
+                    loadAbsentList();
+                } else {
+                    renderManualPlaceholder();
+                }
+            }
+        }
+
+        function switchScanTab(tabName) {
+            const nextTab = tabName === 'alat' ? 'alat' : 'camera';
+
+            if (nextTab === 'camera' && (cameraBlocked || isCameraBlockedByPolicy())) {
+                disableCameraScan('Kamera tidak tersedia. Gunakan tab "Alat Scan Qr".');
+                return;
+            }
+
+            scanTab = nextTab;
+
+            document.querySelectorAll('.scan-tab-btn').forEach((btn) => {
+                const isActive = btn.getAttribute('data-tab') === scanTab;
+                btn.classList.toggle('active', isActive);
+            });
+
+            const cameraContent = document.getElementById('scan-camera-content');
+            const alatContent = document.getElementById('scan-alat-content');
+            if (cameraContent) cameraContent.classList.toggle('active', scanTab === 'camera');
+            if (alatContent) alatContent.classList.toggle('active', scanTab === 'alat');
+
+            const onScannerPage = document.getElementById('scanner-page') &&
+                document.getElementById('scanner-page').classList.contains('active');
+            if (!onScannerPage) return;
+
+            if (scanTab === 'camera') {
+                hideAlatSearchResults();
+                startScanner();
+            } else {
+                stopScanner();
+                ensureAlatStudentData();
+                focusAlatScanInput();
+            }
+        }
+
+        function loadDashboard() {
+            google.script.run
+                .withSuccessHandler((res) => {
+                    if (res.status === 'success') {
+                        document.getElementById('stat-hadir').innerText = res.stats.hadir;
+                        document.getElementById('stat-sakit').innerText = res.stats.sakit;
+                        document.getElementById('stat-ijin').innerText = res.stats.ijin;
+                        document.getElementById('stat-alpha').innerText = res.stats.alpha;
+
+                        renderLogs(res.logs);
+                    } else if (res.status === 'auth_error') {
+                        logout();
+                    }
+                })
+                .withFailureHandler((err) => {
+                    showToast('Gagal memuat data: ' + err.message, 'error');
+                })
+                .getTeacherDashboardData(token);
+
+            // Proactive load student data for instant name lookup
+            ensureAlatStudentData();
+        }
+
+        function renderLogs(logs) {
+            const container = document.getElementById('log-list');
+            container.innerHTML = logs.length ? '' : '<p style="text-align:center; color:var(--text-dim);">Belum ada aktivitas.</p>';
+            logs.forEach(log => {
+                const item = document.createElement('div');
+                item.className = 'log-item';
+                item.innerHTML = `
+                    <div class="log-info">
+                        <h4>${log.nama}</h4>
+                        <p>${log.ket}</p>
+                    </div>
+                    <div style="text-align: right">
+                        <div class="log-time">${log.jam}</div>
+                        <div style="font-size: 10px; font-weight: 700;" class="s-${log.status.toLowerCase()}">${log.status}</div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function startScanner() {
+            if (scanTab !== 'camera') return;
+            if (cameraBlocked || isCameraBlockedByPolicy()) {
+                disableCameraScan('Kamera tidak tersedia. Gunakan tab "Alat Scan Qr".');
+                return;
+            }
+            if (scanner && scanner.isScanning) return;
+            if (!scanner) {
+                scanner = new Html5Qrcode("reader");
+            }
+
+            const videoConstraintsObj = {
+                facingMode: currentCamera,
+                width: { ideal: 1280, min: 640 },
+                height: { ideal: 720, min: 480 }
+            };
+
+            const qrboxFunction = (viewfinderWidth, viewfinderHeight) => {
+                let minEdgePercentage = 0.7; // 70%
+                let minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+                let qrboxSize = Math.max(150, Math.floor(minEdgeSize * minEdgePercentage));
+                return { width: qrboxSize, height: qrboxSize };
+            };
+
+            scanner.start(
+                { facingMode: currentCamera },
+                { fps: 15, qrbox: qrboxFunction, videoConstraints: videoConstraintsObj },
+                (decodedText) => {
+                    handleScanSuccess(decodedText);
+                },
+                (errorMessage) => { }
+            ).catch((err) => {
+                if (handleCameraStartError(err)) return;
+                const errText = (err && err.message) ? err.message : String(err || '');
+                showToast('Kamera gagal: ' + errText, 'error');
+            });
+        }
+
+        function toggleCamera() {
+            if (cameraBlocked || isCameraBlockedByPolicy()) return;
+            const btn = document.getElementById('switch-camera-btn');
+            if (btn) btn.disabled = true;
+            
+            let nextCamera = currentCamera === 'environment' ? 'user' : 'environment';
+            
+            if (scanner && scanner.isScanning) {
+                scanner.stop().then(() => {
+                    scanner = null;
+                    currentCamera = nextCamera;
+                    startScanner();
+                    if (btn) btn.disabled = false;
+                }).catch((err) => {
+                    showToast('Gagal mematikan kamera: ' + err.message, 'error');
+                    if (btn) btn.disabled = false;
+                });
+            } else {
+                currentCamera = nextCamera;
+                startScanner();
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        function stopScanner() {
+            if (scanner && scanner.isScanning) {
+                scanner.stop().then(() => { scanner = null; });
+            }
+            isScanProcessing = false;
+        }
+
+        function handleScanSuccess(nis, onDone) {
+            const normalizedNis = String(nis || '').trim();
+            const now = Date.now();
+
+            // Guard against immediate duplicates but allow next scan almost instantly
+            if (normalizedNis === lastScannedNis && (now - lastScannedAt) < SCAN_COOLDOWN_MS) return false;
+
+            lastScannedNis = normalizedNis;
+            lastScannedAt = now;
+
+            // OPTIMISTIC UPDATE: Instant Success Feedback
+            let studentName = normalizedNis;
+            if (alatStudentList && alatStudentList.length) {
+                const s = alatStudentList.find(x => String(x.nis) === normalizedNis);
+                if (s) studentName = s.nama;
+            }
+
+            // Immediately show success toast (don't wait for server)
+            showToast('✅ ' + studentName + ' BERHASIL!', 'success');
+            
+            // Immediately release lock so next scan can happen (within 1s cooldown)
+            isScanProcessing = false;
+
+            // Fire and forget server request
+            google.script.run
+                .withSuccessHandler((res) => {
+                    if (res.status === 'success' || res.status === 'duplicate') {
+                        // Use name from server if available for better accuracy
+                        const displayName = res.nama || studentName;
+                        if (res.status === 'success') {
+                            showToast('✅ ' + displayName + ' BERHASIL!', 'success');
+                            loadDashboard(); 
+                        } else {
+                            showToast('⚠️ ' + displayName + ': ' + res.message, 'info');
+                        }
+                    } else if (res.status === 'auth_error') {
+                        showToast('❌ Sesi habis, silakan login ulang', 'error');
+                        logout();
+                    } else {
+                        showToast('⚠️ ' + res.message, 'error');
+                    }
+                    if (typeof onDone === 'function') onDone(res);
+                })
+                .withFailureHandler((err) => {
+                    showToast('❌ Gagal sinkron: ' + err.message, 'error');
+                    if (typeof onDone === 'function') onDone({ status: 'error', message: err.message });
+                })
+                .submitTeacherPresensi(token, { nis: normalizedNis, status: 'Hadir' });
+
+            return true;
+        }
+
+        function initAlatScanSearch() {
+            const input = document.getElementById('alat-scan-input');
+            if (!input || input.dataset.ready === '1') return;
+
+            input.dataset.ready = '1';
+
+            input.addEventListener('input', () => {
+                if (alatSearchDebounceTimer) clearTimeout(alatSearchDebounceTimer);
+                alatSearchDebounceTimer = setTimeout(() => {
+                    updateAlatSearchResults(input.value);
+                }, 120);
+            });
+
+            input.addEventListener('focus', () => {
+                ensureAlatStudentData();
+                updateAlatSearchResults(input.value);
+            });
+
+            input.addEventListener('blur', () => {
+                setTimeout(hideAlatSearchResults, 120);
+            });
+        }
+
+        function focusAlatScanInput() {
+            const input = document.getElementById('alat-scan-input');
+            if (!input) return;
+            setTimeout(() => {
+                try {
+                    input.focus({ preventScroll: true });
+                } catch (e) {
+                    input.focus();
+                }
+            }, 60);
+        }
+
+        function ensureAlatStudentData(forceReload) {
+            if (!token) return;
+            if ((alatSearchDataLoaded && !forceReload) || alatSearchLoading) return;
+
+            alatSearchLoading = true;
+            google.script.run
+                .withSuccessHandler((list) => {
+                    alatStudentList = Array.isArray(list) ? list : [];
+                    alatSearchDataLoaded = true;
+                    alatSearchLoading = false;
+
+                    const input = document.getElementById('alat-scan-input');
+                    if (input && input.value.trim()) {
+                        updateAlatSearchResults(input.value);
+                    }
+                })
+                .withFailureHandler(() => {
+                    alatSearchLoading = false;
+                })
+                .getTeacherSiswaList(token, '');
+        }
+
+        function normalizeAlatSearchText(text) {
+            return String(text || '').toLowerCase().replace(/\s+/g, ' ').trim();
+        }
+
+        function escapeAlatHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function getAlatSearchMatches(query, limit) {
+            const q = normalizeAlatSearchText(query);
+            if (!q || !alatStudentList.length) return [];
+
+            const matches = [];
+            for (let i = 0; i < alatStudentList.length; i++) {
+                const s = alatStudentList[i];
+                const nis = String(s.nis || '');
+                const nama = String(s.nama || '');
+                const kelas = String(s.kelas || '');
+
+                const nisNorm = normalizeAlatSearchText(nis);
+                const namaNorm = normalizeAlatSearchText(nama);
+                let score = 0;
+
+                if (nisNorm === q) score = 120;
+                else if (namaNorm === q) score = 110;
+                else if (nisNorm.indexOf(q) === 0) score = 100;
+                else if (namaNorm.indexOf(q) === 0) score = 90;
+                else if (nisNorm.indexOf(q) >= 0) score = 70;
+                else if (namaNorm.indexOf(q) >= 0) score = 60;
+
+                if (score > 0) matches.push({ nis, nama, kelas, score });
+            }
+
+            matches.sort((a, b) => {
+                if (b.score !== a.score) return b.score - a.score;
+                return a.nama.localeCompare(b.nama);
+            });
+
+            return matches.slice(0, limit || 8);
+        }
+
+        function renderAlatSearchEmpty(message) {
+            const box = document.getElementById('alat-search-results');
+            if (!box) return;
+
+            box.innerHTML = '<div class="alat-search-empty">' + escapeAlatHtml(message) + '</div>';
+            box.classList.add('active');
+        }
+
+        function renderAlatSearchResults() {
+            const box = document.getElementById('alat-search-results');
+            if (!box) return;
+
+            if (!alatSearchResults.length) {
+                box.innerHTML = '';
+                box.classList.remove('active');
+                return;
+            }
+
+            let html = '';
+            for (let i = 0; i < alatSearchResults.length; i++) {
+                const s = alatSearchResults[i];
+                const activeClass = i === alatSearchActiveIndex ? ' active' : '';
+                html += '<button type="button" class="alat-search-item' + activeClass + '" onmousedown="event.preventDefault()" onclick="selectAlatSearchResult(' + i + ')">';
+                html += '<div class="alat-search-name">' + escapeAlatHtml(s.nama) + '</div>';
+                html += '<div class="alat-search-meta">NIS: ' + escapeAlatHtml(s.nis) + ' | Kelas: ' + escapeAlatHtml(s.kelas || '-') + '</div>';
+                html += '</button>';
+            }
+
+            box.innerHTML = html;
+            box.classList.add('active');
+        }
+
+        function hideAlatSearchResults() {
+            const box = document.getElementById('alat-search-results');
+            alatSearchActiveIndex = -1;
+            if (!box) return;
+            box.innerHTML = '';
+            box.classList.remove('active');
+        }
+
+        function selectAlatSearchResult(index) {
+            if (index < 0 || index >= alatSearchResults.length) return;
+
+            const selected = alatSearchResults[index];
+            const input = document.getElementById('alat-scan-input');
+            if (input) input.value = '';
+            hideAlatSearchResults();
+            processAlatScan(selected.nis);
+        }
+
+        function moveAlatSearchSelection(direction) {
+            if (!alatSearchResults.length) return;
+
+            if (alatSearchActiveIndex < 0) {
+                alatSearchActiveIndex = direction > 0 ? 0 : alatSearchResults.length - 1;
+            } else {
+                alatSearchActiveIndex += direction;
+                if (alatSearchActiveIndex >= alatSearchResults.length) alatSearchActiveIndex = 0;
+                if (alatSearchActiveIndex < 0) alatSearchActiveIndex = alatSearchResults.length - 1;
+            }
+
+            renderAlatSearchResults();
+        }
+
+        function resolveAlatInputToNis(text) {
+            const raw = String(text || '').trim();
+            if (!raw) return { status: 'empty' };
+
+            if (!alatSearchDataLoaded || !alatStudentList.length) {
+                if (/^\d+$/.test(raw)) return { status: 'direct', nis: raw };
+                return { status: alatSearchLoading ? 'loading' : 'notready' };
+            }
+
+            const normalized = normalizeAlatSearchText(raw);
+            const exactMatches = [];
+
+            for (let i = 0; i < alatStudentList.length; i++) {
+                const s = alatStudentList[i];
+                const nisNorm = normalizeAlatSearchText(s.nis);
+                const namaNorm = normalizeAlatSearchText(s.nama);
+                if (nisNorm === normalized || namaNorm === normalized) exactMatches.push(s);
+            }
+
+            if (exactMatches.length === 1) return { status: 'ok', nis: String(exactMatches[0].nis) };
+            if (exactMatches.length > 1) return { status: 'multiple', matches: exactMatches.slice(0, 8) };
+
+            const partialMatches = getAlatSearchMatches(raw, 8);
+            if (partialMatches.length === 1) return { status: 'ok', nis: String(partialMatches[0].nis) };
+            if (partialMatches.length > 1) return { status: 'multiple', matches: partialMatches };
+
+            return { status: 'notfound' };
+        }
+
+        function updateAlatSearchResults(query) {
+            const q = String(query || '').trim();
+            if (!q) {
+                hideAlatSearchResults();
+                return;
+            }
+
+            if (!alatSearchDataLoaded) {
+                ensureAlatStudentData();
+                if (alatSearchLoading) renderAlatSearchEmpty('Memuat data siswa...');
+                return;
+            }
+
+            alatSearchResults = getAlatSearchMatches(q, 8);
+            alatSearchActiveIndex = -1;
+
+            if (!alatSearchResults.length) {
+                renderAlatSearchEmpty('Siswa tidak ditemukan. Lanjut scan jika memakai kartu.');
+                return;
+            }
+
+            renderAlatSearchResults();
+        }
+
+        function setAlatScanUI(state, message) {
+            const wrapper = document.querySelector('.alat-scan-wrapper');
+            const st = document.getElementById('alat-scan-status');
+            const sub = document.getElementById('alat-scan-subtext');
+
+            if (wrapper) wrapper.classList.toggle('active-scan', state === 'processing');
+
+            if (st) st.textContent = state === 'processing' ? 'Memproses...' : (state === 'error' ? 'Gagal' : 'Siap Memindai');
+
+            if (sub) {
+                if (state === 'processing') sub.textContent = message || 'Tunggu sebentar...';
+                else if (state === 'error') sub.textContent = message || 'Terjadi kesalahan. Coba lagi.';
+                else sub.textContent = message || 'Arahkan scanner ke QR/Barcode siswa, data akan diproses otomatis setelah Enter.';
+            }
+        }
+
+        function processAlatScan(nis) {
+            const cleaned = String(nis || '').trim();
+            if (!cleaned) return;
+
+            hideAlatSearchResults();
+
+            // INSTANT focus reset for physical scanner
+            focusAlatScanInput();
+
+            handleScanSuccess(cleaned, null);
+        }
+
+        function onAlatScan(event) {
+            const input = document.getElementById('alat-scan-input');
+            if (!input) return;
+
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                moveAlatSearchSelection(1);
+                return;
+            }
+
+            if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                moveAlatSearchSelection(-1);
+                return;
+            }
+
+            if (event.key === 'Escape') {
+                hideAlatSearchResults();
+                return;
+            }
+
+            if (event.keyCode === 13 || event.key === 'Enter') {
+                event.preventDefault();
+                const txt = input.value.trim();
+                if (!txt) return;
+
+                if (alatSearchActiveIndex >= 0 && alatSearchResults[alatSearchActiveIndex]) {
+                    selectAlatSearchResult(alatSearchActiveIndex);
+                    return;
+                }
+
+                const resolved = resolveAlatInputToNis(txt);
+                if (resolved.status === 'multiple') {
+                    alatSearchResults = resolved.matches;
+                    alatSearchActiveIndex = 0;
+                    renderAlatSearchResults();
+                    showToast('Pilih siswa dari daftar hasil pencarian', 'info');
+                    return;
+                }
+
+                if (resolved.status === 'loading' || resolved.status === 'notready') {
+                    ensureAlatStudentData(true);
+                    renderAlatSearchEmpty('Data siswa sedang dimuat, mohon tunggu...');
+                    showToast('Memuat data siswa, coba lagi sesaat', 'info');
+                    focusAlatScanInput();
+                    return;
+                }
+
+                if (resolved.status === 'notfound') {
+                    setAlatScanUI('error', 'Nama/NIS tidak ditemukan. Coba kata kunci lain atau scan kartu.');
+                    showToast('Nama/NIS tidak ditemukan', 'error');
+                    focusAlatScanInput();
+                    return;
+                }
+
+                // Immediately clear and process for rapid scanning
+                input.value = '';
+                hideAlatSearchResults();
+                processAlatScan(resolved.nis || txt);
+            }
+        }
+
+        function loadAbsentList() {
+            const kelasEl = document.getElementById('manual-kelas');
+            const kelas = kelasEl ? kelasEl.value : '';
+
+            if (!kelas) {
+                renderManualPlaceholder();
+                updateManualControls();
+                return;
+            }
+
+            const container = document.getElementById('student-list');
+            if (container) {
+                container.innerHTML = '<p style="text-align:center; color:var(--text-dim); padding:20px;">Memuat data...</p>';
+            }
+
+            google.script.run
+                .withSuccessHandler((res) => {
+                    if (res && res.status === 'auth_error') {
+                        showToast('Sesi habis, silakan login ulang', 'error');
+                        logout();
+                        return;
+                    }
+                    renderAbsentList(Array.isArray(res) ? res : []);
+                })
+                .withFailureHandler((err) => {
+                    showToast('Gagal memuat daftar: ' + err.message, 'error');
+                })
+                .getTeacherAbsentList(token, { kelas: kelas });
+        }
+
+        function renderAbsentList(list) {
+            const container = document.getElementById('student-list');
+            container.innerHTML = '';
+            if (!list || list.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:var(--text-dim); padding:20px;">Semua siswa sudah presensi.</p>';
+                return;
+            }
+            list.forEach(s => {
+                const item = document.createElement('div');
+                item.className = 'student-item';
+                item.innerHTML = `
+                    <div><strong>${s.nama}</strong> (${s.kelas})</div>
+                    <div class="btn-group">
+                        <button class="mark-btn b-h" onclick="submitManual('${s.nis}', 'Hadir')">HADIR</button>
+                        <button class="mark-btn b-s" onclick="submitManual('${s.nis}', 'Sakit')">SAKIT</button>
+                        <button class="mark-btn b-i" onclick="submitManual('${s.nis}', 'Ijin')">IZIN</button>
+                        <button class="mark-btn b-a" onclick="submitManual('${s.nis}', 'Alpha')">ALPHA</button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function submitManual(nis, status) {
+            google.script.run
+                .withSuccessHandler((res) => {
+                    if (res.status === 'success') {
+                        const waOk = !res.waStatus || res.waStatus === 'success';
+                        const waInfo = waOk ? '' : (' | WA: ' + (res.waMessage || res.waStatus));
+                        showToast('Update Berhasil' + waInfo, waOk ? 'success' : 'error');
+                        loadAbsentList();
+                        loadDashboard(); // Refresh stats too
+                    } else {
+                        showToast(res.message, 'error');
+                    }
+                })
+                .withFailureHandler((err) => {
+                    showToast('Gagal: ' + err.message, 'error');
+                })
+                .submitTeacherPresensi(token, { nis: nis, status: status, keterangan: 'Manual Petugas' });
+        }
+
+        function showToast(msg, type = 'info') {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.background = type === 'success' ? 'var(--success)' : (type === 'error' ? 'var(--danger)' : 'var(--primary)');
+            t.classList.add('show');
+            setTimeout(() => { t.classList.remove('show'); }, 3000);
+        }
+
+        // Search Filter
+        document.getElementById('search-siswa').onkeyup = (e) => {
+            const val = e.target.value.toLowerCase();
+            document.querySelectorAll('.student-item').forEach(item => {
+                const name = item.innerText.toLowerCase();
+                item.style.display = name.includes(val) ? 'block' : 'none';
+            });
+        };
+    </script>
+</body>
+
+</html>
