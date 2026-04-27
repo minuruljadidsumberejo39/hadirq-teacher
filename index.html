@@ -12,7 +12,7 @@
     <script>
         // --- KONFIGURASI GITHUB PAGES / EXTERNAL HOST ---
         // Ganti URL ini dengan URL Web App Apps Script PETUGAS/TEACHER Anda
-        var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwyo540Jbud0hpVZ5sIv08wB2y9p6SlCFNRN4fkiKClxQfsPekH4i8D8RhowzLw_sHY/exec";
+        var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzIMKaWL-3ry5DAOiD6TQUoThT9tCVrjvwhGPTOjojrx6VLG6ubAOWaaiqpkpTp20Dm/exec";
 
         if (typeof google === 'undefined' || !google.script || !google.script.run) {
             console.log("Menjalankan mode External Host (Github Pages)");
@@ -973,6 +973,40 @@
         let manualKelasLoaded = false;
         let manualKelasLoading = false;
 
+        // ================================================================
+        // INSTANT FEEDBACK FUNCTIONS — tidak perlu tunggu server
+        // ================================================================
+
+        /** Beep instan saat scan terbaca — frekuensi tinggi khas scanner */
+        function beepInstant() {
+            try {
+                var a = new (window.AudioContext || window.webkitAudioContext)();
+                var o = a.createOscillator();
+                var g = a.createGain();
+                o.connect(g); g.connect(a.destination);
+                o.type = 'sine';
+                o.frequency.value = 1200;
+                g.gain.setValueAtTime(0, a.currentTime);
+                g.gain.linearRampToValueAtTime(0.15, a.currentTime + 0.01);
+                g.gain.linearRampToValueAtTime(0, a.currentTime + 0.08);
+                o.start(); o.stop(a.currentTime + 0.1);
+            } catch (e) { /* Abaikan jika browser tidak support */ }
+        }
+
+        /** Flash hijau pada input sebagai visual feedback instan */
+        function flashInputGreen(el) {
+            if (!el) return;
+            el.style.transition = 'background-color 0.05s, box-shadow 0.05s';
+            el.style.backgroundColor = 'rgba(16, 185, 129, 0.25)'; // Hijau muda transparan
+            el.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.4)';
+            el.style.borderColor = 'rgba(16, 185, 129, 0.8)';
+            setTimeout(function () {
+                el.style.backgroundColor = '';
+                el.style.boxShadow = '';
+                el.style.borderColor = '';
+            }, 600);
+        }
+
         window.onload = () => {
             if (token) {
                 showPage('dashboard-page');
@@ -1245,11 +1279,11 @@
                 item.innerHTML = `
                     <div class="log-info">
                         <h4>${log.nama}</h4>
-                        <p>${log.ket}</p>
+                        <p>${log.jam} ${log.kelas || '-'}</p>
                     </div>
                     <div style="text-align: right">
-                        <div class="log-time">${log.jam}</div>
-                        <div style="font-size: 10px; font-weight: 700;" class="s-${log.status.toLowerCase()}">${log.status}</div>
+                        <div style="font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; background: rgba(255,255,255,0.05)" class="s-${log.status.toLowerCase()}">${log.status}</div>
+                        <div style="font-size: 9px; color: var(--text-dim); margin-top: 4px;">${log.ket}</div>
                     </div>
                 `;
                 container.appendChild(item);
@@ -1329,23 +1363,27 @@
             const normalizedNis = String(nis || '').trim();
             const now = Date.now();
 
-            // Guard against immediate duplicates but allow next scan almost instantly
-            if (normalizedNis === lastScannedNis && (now - lastScannedAt) < SCAN_COOLDOWN_MS) return false;
+            // Guard: cegah scan NIS sama dalam SCAN_COOLDOWN_MS detik
+            if (normalizedNis === lastScannedNis && (now - lastScannedAt) < SCAN_COOLDOWN_MS) {
+                showToast('⚠️ Data Ganda Dicegah', 'error');
+                return false;
+            }
 
             lastScannedNis = normalizedNis;
             lastScannedAt = now;
 
-            // OPTIMISTIC UPDATE: Instant Success Feedback
+            // ===== OPTIMISTIC FEEDBACK INSTAN (sebelum server) =====
             let studentName = normalizedNis;
             if (alatStudentList && alatStudentList.length) {
                 const s = alatStudentList.find(x => String(x.nis) === normalizedNis);
                 if (s) studentName = s.nama;
             }
 
-            // Immediately show success toast (don't wait for server)
-            showToast('✅ ' + studentName + ' BERHASIL!', 'success');
-            
-            // Immediately release lock so next scan can happen (within 1s cooldown)
+            beepInstant();                                      // Beep langsung
+            showToast('✅ ' + studentName + ' BERHASIL!', 'success'); // Toast langsung
+            // ======================================================
+
+            // Bebaskan lock agar scan berikutnya bisa langsung masuk
             isScanProcessing = false;
 
             // Fire and forget server request
@@ -1354,7 +1392,10 @@
                     if (res.status === 'success' || res.status === 'duplicate') {
                         const displayName = res.nama || studentName;
                         if (res.status === 'success') {
-                            const waInfo = res.waStatus === 'queued' ? ', WA dalam antrian' : '';
+                            let waInfo = '';
+                            if (res.waStatus === 'queued') waInfo = ', WA dalam antrian';
+                            else if (res.waStatus === 'disabled') waInfo = ', WA dinonaktifkan';
+
                             showToast('✅ ' + displayName + ' BERHASIL' + waInfo, 'success');
                             loadDashboard(); 
                         } else {
@@ -1619,7 +1660,16 @@
 
             hideAlatSearchResults();
 
-            // INSTANT focus reset for physical scanner
+            // ===== OPTIMISTIC UI: Flash hijau + clear input INSTAN =====
+            const inputEl = document.getElementById('alat-scan-input');
+            if (inputEl) {
+                inputEl.value = ''; // Kosongkan segera
+                flashInputGreen(inputEl); // Visual flash hijau
+                beepInstant(); // Audio beep instan
+            }
+            // ===========================================================
+
+            // Auto-focus kembali
             focusAlatScanInput();
 
             handleScanSuccess(cleaned, null);
