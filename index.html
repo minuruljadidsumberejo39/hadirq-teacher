@@ -12,7 +12,7 @@
     <script>
         // --- KONFIGURASI GITHUB PAGES / EXTERNAL HOST ---
         // Ganti URL ini dengan URL Web App Apps Script PETUGAS/TEACHER Anda
-        var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzIMKaWL-3ry5DAOiD6TQUoThT9tCVrjvwhGPTOjojrx6VLG6ubAOWaaiqpkpTp20Dm/exec";
+        var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxbvkWaqA-coftQ6gJmoP50jb1BsOjAca3cwK6nRcUa6tRVNDRktJ1s0hG-SIjjnWU2/exec";
 
         if (typeof google === 'undefined' || !google.script || !google.script.run) {
             console.log("Menjalankan mode External Host (Github Pages)");
@@ -1365,7 +1365,8 @@
 
             // Guard: cegah scan NIS sama dalam SCAN_COOLDOWN_MS detik
             if (normalizedNis === lastScannedNis && (now - lastScannedAt) < SCAN_COOLDOWN_MS) {
-                showToast('⚠️ Data Ganda Dicegah', 'error');
+                // Diabaikan secara diam-diam (silent ignore) agar kamera yang terus
+                // membaca QR tidak memunculkan spam notifikasi ganda.
                 return false;
             }
 
@@ -1405,7 +1406,10 @@
                         showToast('❌ Sesi habis, silakan login ulang', 'error');
                         logout();
                     } else {
-                        showToast('⚠️ ' + res.message, 'error');
+                        // Tampilkan error dengan warna merah (termasuk error LIBUR)
+                        const displayName = res.nama || studentName;
+                        const errorMsg = res.message || 'Terjadi kesalahan';
+                        showToast('❌ ' + displayName + ': ' + errorMsg, 'error');
                     }
                     if (typeof onDone === 'function') onDone(res);
                 })
@@ -1799,6 +1803,10 @@
                         showToast(msg, 'success');
                         loadAbsentList();
                         loadDashboard(); // Refresh stats too
+                    } else if (res.status === 'error') {
+                        // Tampilkan error dengan warna merah (termasuk error LIBUR)
+                        const displayName = res.nama ? res.nama + ': ' : '';
+                        showToast('❌ ' + displayName + res.message, 'error');
                     } else {
                         showToast(res.message, 'error');
                     }
